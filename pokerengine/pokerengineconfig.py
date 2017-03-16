@@ -31,8 +31,7 @@ from pokerengine import log as engine_log
 log = engine_log.get_child('config')
 import re
 
-import libxml2
-import libxslt
+from lxml import etree
 
 class Config:
 
@@ -48,17 +47,14 @@ class Config:
 
     def __del__(self):
         self.free()
-        
+
     def free(self):
-        if self.doc: self.doc.freeDoc()
         self.doc = None
-        if self.header: self.header.xpathFreeContext()
         self.header = None
-        
+
     def reload(self):
         self.free()
-        self.doc = libxml2.parseFile(self.path)
-        self.header = self.doc.xpathNewContext()
+        self.doc = etree.XML(open(self.path, 'r').read())
 
     def load(self, path):
         for prefix in self.dirs:
@@ -68,8 +64,7 @@ class Config:
                 break
         self.free()
         if self.path:
-            self.doc = libxml2.parseFile(self.path)
-            self.header = self.doc.xpathNewContext()
+            self.doc = etree.XML(open(self.path, 'r').read())
             if Config.upgrades_repository:
                 self.checkVersion("poker_engine_version", version, Config.upgrades_repository)
             return True
@@ -78,16 +73,19 @@ class Config:
             return False
 
     def checkVersion(self, version_attribute, software_version, upgrades_repository, default_version = "1.0.5"):
-        version_node = self.header.xpathEval("/child::*/@" + version_attribute)
+        for record in self.doc:
+            if record is not None:
+                version_node = record.xpath("/child::*/@" + version_attribute)
+                if len(version_node) > 0:
+                    version_node = version_node[0]
         if not version_node:
-            root_node = self.doc.getRootElement()
-            root_node.newProp(version_attribute, default_version)
+            self.doc.attrib[version_attribute] = default_version
             if not self.upgrade_dry_run:
                 self.save()
             file_version = Version(default_version)
-            log.inform("chackVersion: '%s': set default version to %s", self.path, default_version)
+            log.inform("checkVersion: '%s': set default version to %s", self.path, default_version)
         else:
-            file_version = Version(version_node[0].content)
+            file_version = Version(version_node)
 
         if software_version != file_version:
             if software_version > file_version:
@@ -111,32 +109,43 @@ class Config:
             files = filter(lambda f: isfile(f) and ".xsl" in f, files)
             for upgradefile in file_version.upgradeChain(software_version, files):
                 log.inform("upgrade: '%s' with '%s'", self.path, upgradefile)
-                styledoc = libxml2.parseFile(upgradefile)
-                style = libxslt.parseStylesheetDoc(styledoc)
-                result = style.applyStylesheet(self.doc, None)
+                xslt_root = etree.XML(open(upgradefile, 'r').read())
+                transform = etree.XSLT(xslt_root)
+                result = etree.tostring(transform(self.doc))
+
                 if not self.upgrade_dry_run:
-                    style.saveResultToFilename(self.path, result, compression = 0)
-                result.freeDoc()
-                # apparently deallocated by freeStylesheet
-                # styledoc.freeDoc()
-                style.freeStylesheet()
+                    output_file = open(self.path, 'w')
+                    output_file.write(result)
+                    output_file.close()
+
                 if not self.upgrade_dry_run:
                     self.reload()
         else:
             log.inform("upgrade: '%s' is not a directory, ignored", upgrades_repository)
         if not self.upgrade_dry_run:
-            self.headerSet("/child::*/@" + version_attribute, str(software_version))
+            self.headerSet("/child::*", version_attribute, str(software_version))
             self.save()
-        
+
     def save(self):
         if not self.path:
             log.error("save: unable to write back, invalid path")
             return
-        self.doc.saveFile(self.path)
-        
+        xmlFile = open(self.path, 'w')
+        xmlFile.write(etree.tostring(self.doc, pretty_print=True))
+        xmlFile.close()
+
     def headerGetList(self, name):
-        result = self.header.xpathEval(name)
-        return [o.content for o in result]
+        result = self.doc.xpath(name)
+        if len(result)>0 and (type(result[0]) == etree.Element or type(result[0]) == etree._Element):
+            lst = []
+            for o in result:
+                if o.text == None:
+                    lst.append('')
+                else:
+                    lst.append(o.text)
+            return lst
+        else:
+            return [o for o in result]
 
     def headerGetInt(self, name):
         string = self.headerGet(name)
@@ -144,25 +153,33 @@ class Config:
             return int(string)
         else:
             return 0
-        
+
     def headerGet(self, name):
-        results = self.header.xpathEval(name)
-        return results[0].content if results else ""
-        
-    def headerSet(self, name, value):
-        results = self.header.xpathEval(name)
-        results[0].setContent(value)
-        
+        results = self.doc.xpath(name)
+        if type(results) == str:
+            return results
+        elif len(results)>0 and (type(results[0]) == etree.Element or type(results[0]) == etree._Element):
+            return results[0].text
+        else:
+            if len(results) > 0:
+                return results[0]
+            elif len(results) == 0 and type(results) == list:
+                return ''
+            else:
+                return results
+
+    def headerSet(self, parent, name, value):
+        header = self.doc.xpath(parent)[0]
+        if name in header.attrib.keys():
+            header.attrib[name] = value
+        else:
+            raise IndexError
+
     def headerGetProperties(self, name):
         results = []
-        for node in self.header.xpathEval(name):
+        for node in self.doc.xpath(name):
             results.append(self.headerNodeProperties(node))
         return results
 
     def headerNodeProperties(self, node):
-        result = {}
-        properties = node.properties
-        while properties != None:
-            result[properties.name] = properties.content
-            properties = properties.next
-        return result
+        return node.attrib

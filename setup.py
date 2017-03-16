@@ -9,7 +9,7 @@ from distutils.core import setup
 from distutils.command.build import build as DistutilsBuild
 
 class ExtendedBuild(DistutilsBuild):
-    
+
     def run(self):
         os.system("make -C po")
         os.system("bash conf/build.sh")
@@ -19,7 +19,7 @@ from pprint import pprint as pp
 
 setup(
     name='poker-engine',
-    version='1.5.4',
+    version='2.4.9',
     packages=['pokerengine'],
     data_files=[
         ('bin', ['pokerconfigupgrade']),

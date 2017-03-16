@@ -57,7 +57,7 @@ class TestAllIn(unittest.TestCase):
     def bestWithStrings(self, side, serial):
         _value, cards = self.game.bestHand(side, serial)
         return (cards[0], self.game.eval.card2string(cards[1:]))
-        
+
     def tearDown(self):
         del self.game
 
@@ -71,7 +71,7 @@ class TestAllIn(unittest.TestCase):
         else:
             cards.allHidden()
         return cards
-    
+
     def make_new_player(self, i, initial_money = INITIAL_MONEY):
         self.assert_(self.game.addPlayer(i))
         player = self.game.serial2player[i]
@@ -113,11 +113,11 @@ class TestCommonAllIn(TestAllIn):
         # player[4] money = 200
         # player[5] money = 10
         #
-        # player[1] side_pot = 130 (p[1]=50 + p[2]=10 + p[3]=10 + p[4]=50 + p[5]=10) 
-        # player[2] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10) 
-        # player[3] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10) 
-        # player[4] side_pot = 280 (p[1]=50 + p[2]=10 + p[3]=10 + p[4]=200 + p[5]=10) 
-        # player[5] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10) 
+        # player[1] side_pot = 130 (p[1]=50 + p[2]=10 + p[3]=10 + p[4]=50 + p[5]=10)
+        # player[2] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10)
+        # player[3] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10)
+        # player[4] side_pot = 280 (p[1]=50 + p[2]=10 + p[3]=10 + p[4]=200 + p[5]=10)
+        # player[5] side_pot = 50  (p[1]=10 + p[2]=10 + p[3]=10 + p[4]=10 + p[5]=10)
         #
         #
         game = self.game
@@ -136,7 +136,7 @@ class TestCommonAllIn(TestAllIn):
         #
         # player 2 goes all in
         #
-        game.callNraise(2, 10) 
+        game.callNraise(2, 10)
         self.assertEqual(game.inGameCount(), 4)
         self.assertEqual(game.notFoldCount(), 5)
         player2 = game.serial2player[2]
@@ -149,7 +149,7 @@ class TestCommonAllIn(TestAllIn):
         self.assertEqual(game.serialsNotFold(), [1, 2, 3, 4, 5])
         #
         # player 3 tries to check but is not allowed to, should
-        # return False and have no side effect 
+        # return False and have no side effect
         #
         self.assertEqual(game.check(3), False)
 
@@ -178,7 +178,7 @@ class TestCommonAllIn(TestAllIn):
         self.assertEqual(game.inGameCount(), 0)
         self.assertEqual(game.notFoldCount(), 5)
         self.assertEqual(game.state, "muck")
-        
+
 class TestAllInCase2(TestAllIn):
 
     def setUp(self):
@@ -234,7 +234,7 @@ class TestAllInCase2(TestAllIn):
         self.assertEqual(game.inGameCount(), 0)
         self.assertEqual(game.notFoldCount(), 3)
         self.assertEqual(game.state, "muck")
-        
+
 class TestRaise(TestAllIn):
 
     def setUp(self):
@@ -258,14 +258,14 @@ class TestRaise(TestAllIn):
         self.assertEqual(game.position, player[2])
         game.call(2)
 
-        game.callNraise(1, 500) 
+        game.callNraise(1, 500)
         self.assertEqual(game.betLimitsForSerial(2), (1000, 1980, 500))
-        
+
 class TestHoldemAllIn(TestAllIn):
 
     def setUp(self):
         TestAllIn.setUp(self, "holdem", "0-0_50-5000_limit")
-        
+
     def test1_ChipLeft(self):
         """
         Two players are even, 3 to split, 1 odd chip
@@ -294,10 +294,10 @@ class TestOmaha8AllIn(TestAllIn):
 
     def setUp(self):
         TestAllIn.setUp(self, "omaha8", "0-0_50-5000_limit")
-        
+
     def dealCardsOne(self):
         """
-        
+
         1) A player is all in and wins nothing. However, he
            was all-in for an amount greater than the highest bet
            and gets back the difference.
@@ -306,12 +306,12 @@ class TestOmaha8AllIn(TestAllIn):
         4) Odd chips are distributed.
         5) A player is all in for an amount larger than all other
            bets and get it back.
-        
+
         player[1] is all-in with a side pot of 90 and loses but
                   get the extra chips back (200 - 90) = 110
         player[2] is all-in with a side pot of 50
                   player[2] wins hi (Straight) => 50/2 = 25
-                  player[5] win lo (NoPair)     => 50/2 = 25 
+                  player[5] win lo (NoPair)     => 50/2 = 25
         player[3,4,5] are still playing for a pot of (90 - 50) = 40
                   player[3,4] tie for hi (Pair)=> (40 / 2) / 2 = 10 each
                   player[5] win lo (Nopair)     => (40 / 2) = 20
@@ -334,7 +334,7 @@ class TestOmaha8AllIn(TestAllIn):
         player[1].side_pot_index = 2
         player[1].all_in = True
         self.assertEqual(self.bestWithStrings("hi", 1), ('NoPair', ['As', 'Qs', 'Js', '9c', '7d']))
-        
+
         player[2].hand = self.make_cards(False, '6c', '8c', 'Qd', 'Kd')
         player[2].side_pot_index= 0
         player[2].all_in = True
@@ -345,7 +345,7 @@ class TestOmaha8AllIn(TestAllIn):
         player[3].side_pot_index= 1
         self.assertEqual(self.bestWithStrings("hi", 3), ('OnePair', ['As', 'Ac', 'Kh', '9c', '7d']))
         self.assertEqual(self.bestWithStrings("low", 3), ('NoPair', ['8s', '7d', '5h', '4d', 'Ac']))
-        
+
         player[4].hand = self.make_cards(False, 'Ad', '8d', 'Qc', 'Kc')
         player[4].side_pot_index= 1
         self.assertEqual(self.bestWithStrings("hi", 4), ('OnePair', ['As', 'Ad', 'Kc', '9c', '7d']))
@@ -354,7 +354,7 @@ class TestOmaha8AllIn(TestAllIn):
         player[5].side_pot_index= 1
         self.assertEqual(self.bestWithStrings("low", 5), ('NoPair', ['6s', '5h', '4d', '2s', 'As']))
 
-        
+
     def dealCardsTwo(self):
         """
         Simple situation, no all-in, player[3] with straight
@@ -370,11 +370,11 @@ class TestOmaha8AllIn(TestAllIn):
         player[1].hand = self.make_cards(False, 'Th', 'Js', 'Qs', '2c')
         self.assertEqual(self.bestWithStrings("hi", 1), ('NoPair', ['As', 'Qs', 'Js', '9c', '7d']))
         self.assertEqual(self.bestWithStrings("low", 1), ('Nothing', []))
-        
+
         player[2].hand = self.make_cards(False, 'Ac', '8s', 'Qh', 'Kh')
         self.assertEqual(self.bestWithStrings("hi", 2), ('OnePair', ['As', 'Ac', 'Kh', '9c', '7d']))
         self.assertEqual(self.bestWithStrings("low", 2), ('NoPair', ['8s', '7d', '5h', '4d', 'Ac']))
-        
+
         player[3].hand = self.make_cards(False, '6c', '8c', 'Qd', 'Kd')
         self.assertEqual(self.bestWithStrings("hi", 3), ('Straight', ['9c', '8c', '7d', '6c', '5h']))
         self.assertEqual(self.bestWithStrings("low", 3), ('NoPair', ['8c', '6c', '5h', '4d', 'As']))
@@ -408,7 +408,7 @@ class TestOmaha8AllIn(TestAllIn):
         game.uncalled = 110
         player = self.player
         game.muckState(pokergame.WON_ALLIN)
-        
+
         self.assertEqual(game.side2winners["hi"], [2, 3, 4])
         self.assertEqual(game.side2winners["low"], [5])
         self.assertEqual(player[1].hand.areVisible(), True)
@@ -430,12 +430,12 @@ class TestOmaha8AllIn(TestAllIn):
         self.assertEqual(player[3].hand.areVisible(), True)
         self.assertEqual(player[4].hand.areVisible(), True)
         self.assertEqual(player[5].hand.areVisible(), False)
-        
+
 class TestHoldemPlayBoard(TestAllIn):
 
     def setUp(self):
         TestAllIn.setUp(self, "holdem", "0-0_50-5000_limit")
-        
+
     def dealCardsOne(self):
         """
         Two players play the board
@@ -447,10 +447,10 @@ class TestHoldemPlayBoard(TestAllIn):
 
         player[1].hand = self.make_cards(False, 'Th', 'Js')
         self.assertEqual(self.bestWithStrings("hi", 1), ('FlHouse', ['As', 'Ac', 'Ad', '7c', '7d']))
-        
+
         player[2].hand = self.make_cards(False, '9c', '8s')
         self.assertEqual(self.bestWithStrings("hi", 2), ('FlHouse', ['As', 'Ac', 'Ad', '7c', '7d']))
-        
+
     def test1_showdown(self):
         self.prepareGame(2)
         self.dealCardsOne()
@@ -462,10 +462,10 @@ class TestHoldemSplit(TestAllIn):
 
     def setUp(self):
         TestAllIn.setUp(self, "holdem", "0-0_50-5000_limit")
-        
+
     def dealCardsOne(self):
         """
-        Two players, one 
+        Two players, one
         """
         game = self.game
         game.side_pots = {'pots':{0:(10,10),},'contributions':{0:{0:{1:2,2:8}},'total':{1:2,2:8,}}}
@@ -474,10 +474,10 @@ class TestHoldemSplit(TestAllIn):
 
         player[1].hand = self.make_cards(False, 'Th', 'Js')
         self.assertEqual(self.bestWithStrings("hi", 1), ('FlHouse', ['As', 'Ac', 'Ad', '7c', '7d']))
-        
+
         player[2].hand = self.make_cards(False, '9c', '8s')
         self.assertEqual(self.bestWithStrings("hi", 2), ('FlHouse', ['As', 'Ac', 'Ad', '7c', '7d']))
-        
+
     def test1_showdown(self):
         self.prepareGame(2)
         self.dealCardsOne()
@@ -498,7 +498,7 @@ def GetTestSuite():
 
 def run():
     return unittest.TextTestRunner().run(GetTestSuite())
-    
+
 if __name__ == '__main__':
     if run().wasSuccessful():
         sys.exit(0)

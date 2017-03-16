@@ -58,7 +58,7 @@ class PokerPrizes:
 class PokerPrizesAlgorithm(PokerPrizes):
     def getPrizes(self):
         buy_in = self.buy_in
-        candidates_count = self.player_count 
+        candidates_count = self.player_count
         if candidates_count < 5:
             winners = 1
         elif candidates_count < 10:
@@ -102,13 +102,14 @@ class PokerPrizesTable(PokerPrizes):
         config = Config(dirs)
         config.load(config_file_name)
         self.payouts = []
-        for node in config.header.xpathEval("/payouts/payout"):
-            properties = config.headerNodeProperties(node)
-            self.payouts.append((int(properties['max']), [float(percent)/100 for percent in node.content.split()]))
+
+        for node in config.doc.xpath("/payouts/payout"):
+            maxPlayers = node.get("max")
+            self.payouts.append((int(maxPlayers), [float(percent)/100 for percent in node.text.split()]))
 
     def getPrizes(self):
         buy_in = self.buy_in
-        for ( maximum, payouts ) in self.payouts:
+        for (maximum, payouts) in self.payouts:
             if self.player_count <= maximum:
                 break
 

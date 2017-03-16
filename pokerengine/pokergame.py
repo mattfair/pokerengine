@@ -83,7 +83,7 @@ def init_i18n(locale_dir, overrideTranslationFunction=None):
     # so.
 
     # First, if our _() has never been defined, we simply set it to None
-    
+
     # save the old translation function (will be returned)
     try: oldTranslationFunction = _
     except NameError: oldTranslationFunction = None
@@ -94,7 +94,7 @@ def init_i18n(locale_dir, overrideTranslationFunction=None):
         _ = overrideTranslationFunction
     else:
         lang = ''
-    
+
         if platform.system() == "Windows":
             lang = locale.getdefaultlocale()[0][:2]
             if locale_dir is None:
@@ -159,7 +159,7 @@ class PokerPlayer:
         self.auto = False
         self.auto_blind_ante = False
         self.auto_muck = AUTO_MUCK_ALWAYS  # AUTO_MUCK_NEVER, AUTO_MUCK_WIN, AUTO_MUCK_LOSE, AUTO_MUCK_ALWAYS
-        self.auto_policy = AUTO_POLICY_DEFAULT # AUTO_POLICY_BOT, AUTO_POLICY_FOLD = AUTO_POLICY_DEFAULT 
+        self.auto_policy = AUTO_POLICY_DEFAULT # AUTO_POLICY_BOT, AUTO_POLICY_FOLD = AUTO_POLICY_DEFAULT
         self.auto_refill = 0
         self.auto_rebuy = 0
         self.wait_for = False  # True, False, "late", "big", "first_round" ##
@@ -684,7 +684,7 @@ class PokerGame:
         self.forced_dealer_seat = -1
 
         self.last_auto_action = {}
-    
+
     def reset(self):
         self.state = GAME_STATE_NULL
         self.win_condition = WON_NULL
@@ -845,12 +845,12 @@ class PokerGame:
 
     def sit(self, serial):
         player = self.serial2player[serial]
-        
+
         if player.isSit() and not player.sit_out_next_turn and not player.isAuto():
             if self.is_directing:
                 self.log.inform("sit: refuse to sit player %d because is already seated.", serial)
             return False
-        
+
         if not player.isBuyInPayed() or self.isBroke(serial):
             self.log.inform(
                 "sit: refuse to sit player %d because buy in == %s " \
@@ -1121,7 +1121,7 @@ class PokerGame:
         self.showdown_stack = []
         self.turn_history = []
         self.turn_history_is_reduced = False
-        
+
         if self.levelUp():
             self.setLevel(self.getLevel() + 1)
 
@@ -1276,7 +1276,7 @@ class PokerGame:
 
         def updateMissed(players, index, what):
             while index < ABSOLUTE_MAX_PLAYERS and (
-                not players[index] or 
+                not players[index] or
                 not players[index].isSit() or
                 players[index].wait_for == 'first_round'
             ):
@@ -1376,11 +1376,11 @@ class PokerGame:
     def moneyMap(self):
         money = dict((player.serial,player.money) for player in self.playersNotFold())
         return money
-    
+
     def moneyMapWithBets(self):
         money = dict((player.serial,player.money+player.bet+player.dead) for player in self.playersNotFold())
         return money
-    
+
     def isTournament(self):
         return self.hasLevel()
 
@@ -1552,7 +1552,7 @@ class PokerGame:
                     self.historyAdd("ante_request", serial, self.ante_info["value"])
                     auto_payed = False
                     break
-            
+
             if self.blind_info:
                 (amount, dead, state) = self.blindAmount(serial)
                 if amount > 0:
@@ -1696,7 +1696,7 @@ class PokerGame:
         else:
             self.player_list = [s for s, p in self.serial2player.iteritems() if p.isSit() and not p.isWaitForBlind()]
         self.sortPlayerList()
-        
+
         # extended logging
         if self.is_directing and \
             self.state not in (GAME_STATE_NULL, GAME_STATE_END, GAME_STATE_BLIND_ANTE) and \
@@ -2060,8 +2060,8 @@ class PokerGame:
         # betting round (for instance if he payed the big blind or a late blind).
         #
         return (
-            self.round_cap_left != 0 and 
-            money > highest_bet - bet and 
+            self.round_cap_left != 0 and
+            money > highest_bet - bet and
             (player.talked_once == False or bet < highest_bet)
         )
 
@@ -2127,7 +2127,7 @@ class PokerGame:
         if self.isBlindAnteRound() or not self.canAct(serial):
             self.log.inform("player %d cannot call. state = %s", serial, self.state)
             return False
-        
+
         _min_bet, _max_bet, to_call = self.betLimitsForSerial(serial)
         if self.highestBetNotFold() == 0:
             if not self.canCheck(serial):
@@ -2166,7 +2166,7 @@ class PokerGame:
         min_raise, max_raise, _to_call = self.betLimitsForSerial(serial)
         if amount < min_raise: amount = min_raise
         elif amount > max_raise: amount = max_raise
-        
+
         self.log.debug("player %d raises %d", serial, amount)
         self.historyAdd("raise", serial, amount)
         highest_bet = self.highestBetNotFold()
@@ -2269,7 +2269,7 @@ class PokerGame:
             return False
         if not self.canAct(serial):
             self.log.inform(
-                "player %d cannot pay blind. state = %s, serial in position = %d (ignored)", 
+                "player %d cannot pay blind. state = %s, serial in position = %d (ignored)",
                 serial, self.state, self.getSerialInPosition()
             )
             return False
@@ -2393,11 +2393,11 @@ class PokerGame:
             self.returnBlindAnte()
             self.cancelState()
             return
-        
+
         if self.isBlindAntePayed():
             #
-            # It is necessary to recompute the list of players willing to 
-            # participate in the turn. Some of them may have declined to 
+            # It is necessary to recompute the list of players willing to
+            # participate in the turn. Some of them may have declined to
             # pay the blind/ante and thus excluded themselves from the turn,
             # while other could have joined just before/during the blind/ante turn.
             # If this is the case, the position has to be reset.
@@ -2412,7 +2412,7 @@ class PokerGame:
                     if player.wait_for:
                         self.historyAdd("wait_for", serial, player.wait_for)
                 self.historyAdd("player_list", self.player_list)
-        
+
         #
         # If self.player_list was rebuilt, and new players were added,
         # it can happen that now these new players did not yet pay the blind/ante.
@@ -2475,7 +2475,7 @@ class PokerGame:
                     self.nextRound()
                     self.dealCards()
                 self.muckState(WON_ALLIN)
-                
+
             else:
                 #
                 # All bets equal, go to next round
@@ -2576,7 +2576,7 @@ class PokerGame:
             return
 
         self.log.debug("__autoPlay desired action %s", desired_action)
-        
+
         # try to find the next best action if not found in possible actions
         while desired_action not in actions:
             self.log.debug("__autoPlay: desired action %s is not in available actions %s", desired_action, actions)
@@ -2597,7 +2597,7 @@ class PokerGame:
             self.check(serial)
         else: # "fold":
             self.fold(serial)
-            
+
         # update last_auto_action with the action taken
         self.last_auto_action[serial] = desired_action
 
@@ -2639,11 +2639,11 @@ class PokerGame:
         board_size = 0
         hand_size = 0
         for name in self.getParamList("/poker/variant/round/@name"):
-            board = self.getParamList("/poker/variant/round[@name='%s']/deal[@card='board']" % (name,))
+            board = self.getParamList("/poker/variant/round[@name='%s']/deal[@card='board']" % (name))
             board_size += len(board)
-            cards = self.getParamList("/poker/variant/round[@name='%s']/deal[@card='up' or @card='down']/@card" % (name,))
+            cards = self.getParamList("/poker/variant/round[@name='%s']/deal[@card='up' or @card='down']/@card" % (name))
             hand_size += len(cards)
-            position = self.getParam("/poker/variant/round[@name='%s']/position/@type" % (name,))
+            position = self.getParam("/poker/variant/round[@name='%s']/position/@type" % (name))
             info = {
                 "name": name,
                 "position": position,
@@ -2681,11 +2681,11 @@ class PokerGame:
         self.bet_info = self.getParamProperties('/bet/variants[contains(@ids,"' + self.variant + '")]/round')
         for bet_info in self.bet_info:
             if 'cap' not in bet_info:
-                bet_info["cap"] = sys.maxint
+                bet_info["cap"] = str(sys.maxint)
             else:
-                bet_info["cap"] = int(bet_info["cap"])
-            if bet_info["cap"] < 0:
-                bet_info["cap"] = sys.maxint
+                cap = int(bet_info["cap"])
+                if cap < 0:
+                    bet_info["cap"] = str(sys.maxint)
 
         self.blind_info = False
         blind_info = self.getParamProperties("/bet/blind")
@@ -2737,9 +2737,9 @@ class PokerGame:
             config = Config(self.dirs)
             config.load(levels_file)
             levels = []
-            nodes = config.header.xpathEval('/levels/level')
+            nodes = config.doc.xpath('/levels/level')
             for node in nodes:
-                level = map(lambda (key, value): (key, int(value)), config.headerNodeProperties(node).iteritems())
+                level = map(lambda (key, value): (key, int(value)), config.headerNodeProperties(node).items())
                 levels.append(dict(level))
             config.free()
             LEVELS_CACHE[levels_file] = levels
@@ -2891,14 +2891,14 @@ class PokerGame:
 
             self.setRakedAmount(self.rake.getRake(self.getPotAmount(), self.getUncalled(), self.isTournament()))
             self.pot -= self.getRakedAmount()
-            
+
             serial2rake[serial] = self.getRakedAmount()
             serial2delta[serial] += self.pot
             serial2money[serial] += self.pot
-            
+
             self.serial2best = self.bestHands([serial])
             self.side2winners = {'hi': [], 'low': []}
-            
+
             self.showdown_stack = [
                 {
                     'type': 'game_state',
@@ -3004,7 +3004,7 @@ class PokerGame:
                 pot = serial2side_pot[winner.serial]
                 serial2share[winner.serial] += pot
                 serial2delta[winner.serial] += pot
-                
+
                 if self.uncalled_serial != 0 and winner.serial != self.uncalled_serial:
                     for player_serial in serial2side_pot.keys():
                         if serial2side_pot[player_serial] > 0: serial2side_pot[player_serial] -= pot
@@ -3237,7 +3237,7 @@ class PokerGame:
                 if hi_value > best_hi_value:
                     best_hi_value = hi_value
                     show = True
-            
+
             #
             # If a player is all-in, he has to show his cards.
             #
@@ -3535,7 +3535,7 @@ class PokerGame:
                 self.uncalled = highest_bet - player.bet
             if player.bet == highest_bet:
                 self.uncalled_serial = player.serial
-                
+
 
     def updatePots(self, serial, amount):
         pot_index = len(self.side_pots['pots']) - 1
@@ -3910,7 +3910,7 @@ class PokerGame:
 
     def serialsInactive(self):
         return [p.serial for p in self.playersAll() if not p.action_issued and p.auto]
-    
+
     def isGameEndInformationValid(self):
         #
         # Only relevant for a game that has ended and for which we want to know
@@ -3927,7 +3927,7 @@ class PokerGame:
     #
     def roundCap(self):
         if self.isRunning():
-            return self.betInfo()["cap"]
+            return int(self.betInfo()["cap"])
         return 0
 
     def betLimits(self):
@@ -3961,9 +3961,9 @@ class PokerGame:
                     max_bet = "pot"
             else:
                 max_bet = "money"
-                
+
         return (min_bet, max_bet)
-    
+
     def betLimitsForSerial(self, serial):
         if not self.isRunning():
             return 0,0,0
@@ -3972,15 +3972,15 @@ class PokerGame:
         money = player.money
         bet = player.bet
         highest_bet_diff = highest_bet - bet
-        
+
         if self.round_cap_left <= 0:
             return (0, 0, highest_bet_diff)
-        
+
         min_bet, max_bet = self.betLimits()
         min_bet = max(min_bet, self.last_bet)
-        
+
         if max_bet == "money": max_bet = money
-        elif max_bet == "pot": max_bet = max(self.potAndBetsAmount() + highest_bet_diff, min_bet) 
+        elif max_bet == "pot": max_bet = max(self.potAndBetsAmount() + highest_bet_diff, min_bet)
         #
         # A player can't bet more than he has.
         # After calling, the amount of money a player has bet is at least min_bet.
@@ -4024,8 +4024,8 @@ class PokerGame:
         player = self.getPlayer(serial)
         if not player:
             return False
-        
-        # if the game is directing, check if the player will have more money than the 
+
+        # if the game is directing, check if the player will have more money than the
         # max buyin after the rebuy. if this is the case, he is not allowed to rebuy.
         # if the game is not directing, this check should not be made, as the player who
         # made the rebuy could have won in the current round, while still getting a delayed
@@ -4040,7 +4040,7 @@ class PokerGame:
         if not self.isRebuyPossible():
             # The rebuy is not allowed
             return False
-        
+
         # player can rebuy right now
         player.money += amount
         self.historyAdd("rebuy", serial, amount)
@@ -4049,7 +4049,7 @@ class PokerGame:
         # the chips of the players are loaded afterwards
         if self.isRunning(): player.rebuy_given += amount
         return True
-    
+
     def receiveBuyOut(self, serial):
         if not self.is_directing: return
         player = self.getPlayer(serial)
@@ -4057,7 +4057,7 @@ class PokerGame:
         if money != 0:
             self.historyAdd("buyOut", serial, money, player.bet)
         return money
-    
+
     def buyIn(self):
         return self.buy_in
 
@@ -4124,7 +4124,7 @@ class PokerGame:
     def historyAdd(self, *args):
         self.runCallbacks(*args)
         self.turn_history.append(args)
-        
+
     def updateHistoryEnd(self, winners, showdown_stack):
         for index in range(-1, -len(self.turn_history), -1):
             if self.turn_history and self.turn_history[index][0] == "end":
@@ -4133,28 +4133,28 @@ class PokerGame:
 
     def historyGet(self):
         return self.turn_history
-    
+
     def historyCanBeReduced(self):
         return bool(not self.turn_history_is_reduced and find(PokerGame._historyFinalEvent,self.turn_history))
-     
+
     def historyReduce(self):
         if self.historyCanBeReduced():
             self.turn_history = PokerGame._historyReduce(self.turn_history, self.moneyMapWithBets())
             self.turn_history_is_reduced = True
         else:
             self.log.inform("History cannot be reduced.")
-        
+
     @staticmethod
     def _historyFinalEvent(event):
         return event[0] in ("showdown","muck") or (event[0]=="round" and event[1] != GAME_STATE_BLIND_ANTE)
-    
+
     @staticmethod
     def _historyReduce(turn_history, money_map, in_place=False):
         player_list_index = 7
         serial2chips_index = 9
-        
+
         if not in_place: turn_history = deepcopy(turn_history)
-            
+
         game_event = None
         player_list_new = None
         #
@@ -4199,8 +4199,8 @@ class PokerGame:
         # recreate and mark positions if needed
         for p_index in range(0,len(turn_history)):
             if (
-                not turn_history[p_index][0] == "position" or 
-                not turn_history[p_index][1] >= 0 
+                not turn_history[p_index][0] == "position" or
+                not turn_history[p_index][1] >= 0
                 or p_index in remove_indexes
             ):
                 continue
@@ -4210,7 +4210,7 @@ class PokerGame:
                 else None
             if position == position_reduced:
                 pass # no need to replace if it's already equal
-            elif position_reduced is not None and position >= 0: 
+            elif position_reduced is not None and position >= 0:
                 turn_history[p_index] = (event_type, position_reduced, serial)
             else:
                 remove_indexes.append(p_index)
@@ -4219,8 +4219,8 @@ class PokerGame:
         pos_last = None
         for p_index in range(0,len(turn_history)):
             if (
-                not turn_history[p_index][0] == "position" or 
-                not turn_history[p_index][1] >= 0 
+                not turn_history[p_index][0] == "position" or
+                not turn_history[p_index][1] >= 0
                 or p_index in remove_indexes
             ):
                 continue
@@ -4233,7 +4233,7 @@ class PokerGame:
         # delete all obsolete elements
         for index in sorted(remove_indexes,reverse=True):
             del turn_history[index]
-        
+
         if not in_place:
             return turn_history
 
