@@ -8,7 +8,6 @@ import test_game
 import test_gamehistory
 import test_history
 import test_i18n
-import test_libxml2leak
 import test_muck
 import test_pokercards
 import test_pokerchips

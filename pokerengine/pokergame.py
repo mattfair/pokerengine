@@ -141,7 +141,7 @@ class PokerPlayer:
 
     log = log.get_child('PokerPlayer')
 
-    def __init__(self, serial, name, game):
+    def __init__(self, serial, name, game, botPlayer):
         self.log = PokerPlayer.log.get_instance(self, refs=[
             ('Game', game, lambda game: game.id),
             ('Hand', game, lambda game: game.hand_serial if game.hand_serial > 1 else None),
@@ -150,6 +150,7 @@ class PokerPlayer:
         self.serial = serial
         self.name = name if name else "noname"
         self.game = game
+        self.botPlayer = botPlayer
         self.fold = False
         self.remove_next_turn = False
         self.sit_out = True
@@ -965,7 +966,7 @@ class PokerGame:
         else:
             return False
 
-    def addPlayer(self, serial, seat=-1, name=None):
+    def addPlayer(self, serial, seat=-1, name=None, botPlayer=None):
         "Add and return player if possible."
         player = self.getPlayer(serial)
         if player:
@@ -993,7 +994,7 @@ class PokerGame:
             return None
 
         # finally add player
-        player = PokerPlayer(serial, name, self)
+        player = PokerPlayer(serial, name, self, botPlayer)
         self.seats_left.remove(seat)
         self.serial2player[serial] = player
         if seat == -1:
@@ -2516,38 +2517,9 @@ class PokerGame:
             self.endState()
 
     def __botEval(self, serial):
-        ev = self.handEV(serial, 10000, True)
-
-        if self.state == GAME_STATE_PRE_FLOP:
-            if ev < 100:
-                action = "check"
-            elif ev < 500:
-                action = "call"
-            else:
-                action = "raise"
-        elif self.state == GAME_STATE_FLOP or self.state == GAME_STATE_THIRD:
-            if ev < 200:
-                action = "check"
-            elif ev < 600:
-                action = "call"
-            else:
-                action = "raise"
-        elif self.state == GAME_STATE_TURN or self.state == GAME_STATE_FOURTH:
-            if ev < 300:
-                action = "check"
-            elif ev < 700:
-                action = "call"
-            else:
-                action = "raise"
-        else:
-            if ev < 400:
-                action = "check"
-            elif ev < 800:
-                action = "call"
-            else:
-                action = "raise"
-
-        return (action, ev)
+        #returns (action, amount)
+        player = self.serial2player[serial]
+        return player.botPlayer.eval(self)
 
     def __autoPlay(self):
         if not self.is_directing:
@@ -2559,12 +2531,13 @@ class PokerGame:
             serial, player.isBot(), player.isSitOut(), player.isAuto(),
             player.auto_policy
         ))
+        raiseAmount = 0
         if player.isBot():
-            desired_action, _ev = self.__botEval(serial)
+            desired_action, raiseAmount = self.__botEval(serial)
             actions = set(self.possibleActions(serial))
             if player.raise_count >= 3: actions -= set(["raise"])
         elif player.isAuto() and player.auto_policy == AUTO_POLICY_BOT:
-            desired_action, _ev = self.__botEval(serial)
+            desired_action, raiseAmount = self.__botEval(serial)
             actions = set(self.possibleActions(serial)) - set(["raise"])
         elif player.isAuto() and player.auto_policy == AUTO_POLICY_FOLD:
             desired_action = "fold"
@@ -2588,14 +2561,19 @@ class PokerGame:
                 desired_action = "fold"
             elif desired_action == "fold":
                 break
+        self.log.debug("__autoPlay: new desired action %s", desired_action)
 
         if desired_action == "raise":
-            self.callNraise(serial, 0)
+            self.log.debug("__autoPlay: callNraise")
+            self.callNraise(serial, raiseAmount)
         elif desired_action == "call":
+            self.log.debug("__autoPlay: call")
             self.call(serial)
         elif desired_action == "check":
+            self.log.debug("__autoPlay: check")
             self.check(serial)
         else: # "fold":
+            self.log.debug("__autoPlay: fold")
             self.fold(serial)
 
         # update last_auto_action with the action taken
@@ -4124,6 +4102,8 @@ class PokerGame:
     def historyAdd(self, *args):
         self.runCallbacks(*args)
         self.turn_history.append(args)
+        self.log.debug("Pot=%f", self.pot)
+        self.log.debug("Side Pot=%s", str(self.side_pots))
 
     def updateHistoryEnd(self, winners, showdown_stack):
         for index in range(-1, -len(self.turn_history), -1):

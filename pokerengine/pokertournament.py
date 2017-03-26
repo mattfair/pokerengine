@@ -50,7 +50,7 @@ TOURNAMENT_REBUY_ERROR_TIMEOUT = "timeout"
 TOURNAMENT_REBUY_ERROR_USER = "user"
 TOURNAMENT_REBUY_ERROR_MONEY = "money"
 TOURNAMENT_REBUY_ERROR_OTHER = "other"
-            
+
 def equalizeCandidates(games):
     #
     # Games less than 70% full are willing to steal players from other
@@ -123,7 +123,7 @@ def breakGames(games, log=None):
             "serials": game.serialsAll(),
             "to_add": [],
             "running": not game.isEndOrNull()
-        } for game in games 
+        } for game in games
     ]
 
     if log: log.debug("breakGames: %s", to_break)
@@ -147,7 +147,7 @@ def breakGame(to_break, to_fill, log = None):
     #
     if len(to_break["to_add"]) > 0 or to_break["running"]:
         return False
-    
+
     seats_left = sum(game["seats_left"] for game in to_fill)
     serials = to_break["serials"]
     game_id = to_break["id"]
@@ -184,13 +184,13 @@ class PokerTournamentStats:
         self.player_chips_max = {"serial": 0, "name": "noname"}
         self.players_active = 0
         self.players_money_rank = {}
-        
+
     def update(self, game_id):
         active_player_ranks = []
         inactive_players = set(self._tourney.winners)
         for game in self._tourney.games:
             active_player_ranks.extend(
-                player for (serial,player) in game.serial2player.iteritems() 
+                player for (serial,player) in game.serial2player.iteritems()
                 if serial not in inactive_players
             )
         if not active_player_ranks:
@@ -200,29 +200,29 @@ class PokerTournamentStats:
             return False
 
         active_player_ranks.sort(key=lambda player: player.money, reverse=True)
-        
+
         players_money_rank = dict(
             (player_serial, rank+1) for (rank,player_serial)
             in enumerate([player.serial for player in active_player_ranks] + self._tourney.winners)
         )
-        
+
         self.chips_avg = int(sum(player.money for player in active_player_ranks) / float(len(active_player_ranks)) +\
             sum(game.pot for game in self._tourney.games) / float(len(active_player_ranks)))
         self.chips_max = active_player_ranks[0].money
         self.player_chips_max = {
-            "serial": active_player_ranks[0].serial, 
+            "serial": active_player_ranks[0].serial,
             "name": active_player_ranks[0].name
         }
         self.players_active = len(active_player_ranks)
         self.players_money_rank = players_money_rank
-        
+
     def __call__(self,user_serial):
         if self.chips_avg == 0:
             self.update(self._tourney.games[0].id)
         ret = {
             "serial": user_serial,
             "tourney_serial": self._tourney.serial,
-            "rank": self.players_money_rank.get(user_serial,0),   
+            "rank": self.players_money_rank.get(user_serial,0),
             "chips_avg": self.chips_avg,
             "chips_max": self.chips_max,
             "players_active": self.players_active,
@@ -231,7 +231,7 @@ class PokerTournamentStats:
             "table_count": len(self._tourney.games),
         }
         return ret
-        
+
 class PokerTournament:
 
     log = log.get_child('PokerTournament')
@@ -274,12 +274,13 @@ class PokerTournament:
         if type(self.start_time) is StringType:
             self.start_time = int(time.mktime(time.strptime(self.start_time, "%Y/%m/%d %H:%M")))
         self.prefix = ""
-        
+
         self.players = {}
+        self.botPlayers = {}
         self.need_balance = False
         self.registered = 0
         self._rebuy_stack = set()
-        
+
         self.winners_dict = {}
         self._winners_dict_tmp = {}
         self.state = kwargs.get("state", TOURNAMENT_STATE_ANNOUNCED)
@@ -287,7 +288,7 @@ class PokerTournament:
         self.id2game = {}
         self.stats = PokerTournamentStats(self)
         self._last_winner_position = 0
-        
+
         self.callback_new_state = lambda tournament, old_state, new_state: True
         self.callback_create_game = lambda tournament: PokerGameServer("poker.%s.xml", tournament.dirs)
         # I think callback_game_filled() is a misnomer because it's not
@@ -310,7 +311,7 @@ class PokerTournament:
 
         if self.state == TOURNAMENT_STATE_ANNOUNCED:
             self.updateRegistering()
-    
+
     def _getWinners(self):
         """returns a list of serials of players that already lost the game."""
         return [k for (k,_v) in sorted(self.winners_dict.iteritems(), key=lambda (a,b): (b,a), reverse=True)]
@@ -332,8 +333,8 @@ class PokerTournament:
         it is importent that it is called after the callback_remove_player was called
         """
         assert serial in self._winners_dict_tmp or now, 'player %d not found in winners_dict_tmp' % serial
-        # 
-        # pos_info is always (pos, lost_chips, tiebreaker). 
+        #
+        # pos_info is always (pos, lost_chips, tiebreaker).
         # if the user was not in the winners_dict_tmp then the last two position don't matter
         pos_info = self._winners_dict_tmp.pop(serial) if serial in self._winners_dict_tmp else (self._incrementToNextWinnerPosition(), 0, 0)
         self.addWinner(serial, pos_info)
@@ -367,13 +368,13 @@ class PokerTournament:
             return int(remainingTime)
         else:
             return 0
-        
+
     def remainingInactiveSeconds(self):
         if self.inactive_delay > 0:
-            return int(self.start_time + self.inactive_delay - tournament_seconds())  
+            return int(self.start_time + self.inactive_delay - tournament_seconds())
         else:
             return 0
-        
+
     def isRebuyAllowed(self, serial="unknown"):
         """
         returns True if a rebuy is possible in this tourney at this moment.
@@ -403,7 +404,7 @@ class PokerTournament:
             return self.winners.index(serial) + rank_first + 1
         except:
             return -1
-        
+
     def updateRegistering(self):
         if self.state == TOURNAMENT_STATE_ANNOUNCED:
             now = tournament_seconds()
@@ -446,7 +447,7 @@ class PokerTournament:
             if running_duration >= running_max:
                 self.breaks_games_id = [g.id for g in self.games if g.isEndOrNull() and g.id != game_id]
                 self.changeState(TOURNAMENT_STATE_BREAK_WAIT)
-                
+
         if self.state == TOURNAMENT_STATE_BREAK_WAIT:
             #
             # game_id is 0 when updateBreak is called after a table was destroyed
@@ -491,7 +492,7 @@ class PokerTournament:
         if self.state not in (TOURNAMENT_STATE_RUNNING, TOURNAMENT_STATE_BREAK_WAIT, TOURNAMENT_STATE_BREAK):
             self.log.inform("updateBreak is not supposed to be called while in state %s", self.state)
             return None
-        
+
         return True
 
     def changeState(self, state, force=False):
@@ -525,7 +526,7 @@ class PokerTournament:
 
     def isRegistered(self, serial):
         return serial in self.players
-        
+
     def canRegister(self, serial):
         if self.state in (TOURNAMENT_STATE_REGISTERING, TOURNAMENT_STATE_LOADING) and self.registered < self.players_quota:
             return not self.isRegistered(serial)
@@ -534,10 +535,11 @@ class PokerTournament:
 
     def canUnregister(self, serial, force=False):
         return self.isRegistered(serial) and (self.state == TOURNAMENT_STATE_REGISTERING or force)
-        
-    def register(self, serial, name=None):
+
+    def register(self, serial, botPlayer, name=None):
         if self.canRegister(serial):
             self.players[serial] = name
+            self.botPlayers[serial] = botPlayer
             self.registered += 1
             self.rank2prize = None
             self.prizes_object.addPlayer()
@@ -553,6 +555,7 @@ class PokerTournament:
     def unregister(self, serial, force=False):
         if self.canUnregister(serial, force):
             del self.players[serial]
+            del self.botPlayers[serial]
             self.registered -= 1
             if self.registered == 0:
                 self.last_registered = None
@@ -566,11 +569,12 @@ class PokerTournament:
         if self.state == TOURNAMENT_STATE_REGISTERING or force:
             self.callback_cancel(self, force)
             self.players = {}
+            self.botPlayers = {}
             self.registered = 0
             return True
         else:
             return False
-        
+
     def sitPlayer(self, serial):
         pass
 
@@ -585,7 +589,7 @@ class PokerTournament:
         from_game.open()
         to_game.open()
         from_player = from_game.getPlayer(serial)
-        to_game.addPlayer(serial,name=from_player.name)
+        to_game.addPlayer(serial,name=from_player.name,botPlayer=from_player.botPlayer)
         to_player = to_game.getPlayer(serial)
         to_game.payBuyIn(serial, from_player.money)
         to_game.sit(serial)
@@ -599,11 +603,11 @@ class PokerTournament:
         from_game.removePlayer(serial)
         from_game.close()
         to_game.close()
-    
+
     def createGames(self):
         games_count = int(ceil(self.registered / float(self.seats_per_game)))
         self.players_quota = games_count * self.seats_per_game
-        players = list(self.players.iteritems()) 
+        players = list(self.players.iteritems())
         shuffler.shuffle(players)
         for game_id in xrange(1, games_count + 1):
             game = self.callback_create_game(self)
@@ -618,11 +622,12 @@ class PokerTournament:
             for _seat in xrange(self.seats_per_game):
                 if not players: break
                 serial, name = players.pop()
-                game.addPlayer(serial, name=name)
+                botPlayer = self.botPlayers[serial]
+                game.addPlayer(serial, name=name, botPlayer=botPlayer)
                 game.payBuyIn(serial, buy_in)
                 game.sit(serial)
                 game.autoBlindAnte(serial)
-                
+
             self.games.append(game)
         self.id2game = dict((game.id,game) for game in self.games)
         # Next, need to call balance games, because the table assignment
@@ -634,7 +639,7 @@ class PokerTournament:
         for game in self.games:
             self.callback_game_filled(self, game)
             game.close()
-    
+
     def gameAction(self, game_id, event_type, *args):
         if event_type in ("call", "raise", "check"):
             self.callback_user_action(self, args[0])
@@ -656,7 +661,7 @@ class PokerTournament:
 
     def isRebuying(self, serial):
         return serial in self._rebuy_stack
-    
+
     def serialsRebuying(self, game_id):
         try:
             game = self.id2game[game_id]
@@ -665,37 +670,37 @@ class PokerTournament:
         except KeyError:
             self.log.warn("serialsRebuying: game_id %d not found", game_id, refs=[('Game', game_id, int)])
             return set()
-    
+
     def rebuyPlayerRequest(self, game_id, serial):
         game = self.id2game[game_id]
-        
+
         if not self.isRebuyAllowed(serial):
             return False, TOURNAMENT_REBUY_ERROR_TIMEOUT
-        
+
         if not self.isRebuyAllowedForUser(serial, game):
             return False, TOURNAMENT_REBUY_ERROR_USER
-        
+
         if serial in self._rebuy_stack:
             return False, TOURNAMENT_REBUY_ERROR_OTHER
-        
+
         if game.isRebuyPossible():
             success, error = self._rebuy(game_id, serial)
             return success, error
-        
+
         self._rebuy_stack.add(serial)
 
         if self.id2game[game_id].isEndOrMuck():
             self.rebuyAllPlayers(game_id)
         return True, None
-    
+
     def rebuyAllPlayers(self, game_id):
         self.log.inform("rebuyAllPlayers now")
         serials_rebuying = self.serialsRebuying(game_id)
-        
+
         for serial in serials_rebuying:
             self._rebuy_stack.remove(serial)
             self._rebuy(game_id, serial)
-        
+
     def _rebuy(self, game_id, serial):
         """
         performs a tourney rebuy for the player with the given serial
@@ -720,21 +725,21 @@ class PokerTournament:
 
         else:
             amount = self.callback_rebuy_payment(self, serial, game_id, self.buy_in+self.rake, game.buyIn())
-        
+
             if amount == 0:
                 self.log.warn("player %d  has not enough money, tourney rebuy denied", serial, refs=[('User', serial, int), ('Game', game_id, int)])
                 error = TOURNAMENT_REBUY_ERROR_MONEY
-    
+
             elif not game.rebuy(serial, game.buyIn()):
                 # This should never happen! We need to give the user the money back
                 # and the winner of the tourney would get too much chips
                 self.log.error("rebuy denied for user %s" % serial, refs=[('User', serial, int), ('Game', game_id, int)])
                 error = TOURNAMENT_REBUY_ERROR_OTHER
-                
+
             else:
                 self.reenterGame(game_id, serial)
                 self.prizes_object.rebuy()
-        
+
         success = error is None
         self.callback_rebuy(self, serial, game_id, success, error)
         return success, error
@@ -746,30 +751,30 @@ class PokerTournament:
         loosers = game.serialsBroke()
         pos = self._incrementToNextWinnerPosition()
         new_loosers = [s for s in loosers if s not in self._winners_dict_tmp]
-        
+
         if new_loosers:
             self.log.debug('removeBrokePlayers: serials: %s. game_id: %d. now: %s', new_loosers, game_id, now)
-        
+
         randlist = range(len(new_loosers))
         shuffler.shuffle(randlist)
-        
+
         # the person who had more money before the all in should get a higher rank
         # if the amount is equal, use a 'random card', in this case the tiebreaker
         # as a means to differentiate between positions
         values = dict(
-            (serial, (pos, -game.showdown_stack[0]['serial2delta'].get(serial,0), tiebreaker)) 
+            (serial, (pos, -game.showdown_stack[0]['serial2delta'].get(serial,0), tiebreaker))
             for (serial,tiebreaker) in zip(new_loosers, randlist)
         )
-        
+
         new_loosers.sort(key=lambda i: values[i])
-        
+
         if not now:
             for serial in new_loosers:
                 self._winners_dict_tmp[serial] = values[serial]
-                
+
         for serial in new_loosers:
             self.callback_remove_player(self, game_id, serial, now=now)
-            
+
         if loosers:
             self.need_balance = True
 
@@ -778,35 +783,35 @@ class PokerTournament:
     def removeInactivePlayers(self, game_id):
         game = self.id2game[game_id]
         inactive_players = game.serialsInactive()
-        
+
         # if all players are inactive, the last player will not be removed
         if len(inactive_players) == len(game.serialsAll()):
             inactive_players.pop()
-        
+
         if inactive_players:
             self.log.debug('removeInactivePlayers: serials: %s. game_id: %d.', inactive_players, game_id)
             self.callback_log_remove_inactive(self, inactive_players)
-        
+
         for serial in inactive_players:
             self.callback_remove_player(self, game_id, serial, now=True)
-            
+
         if inactive_players:
             self.need_balance = True
-            
+
         return len(inactive_players)
-        
+
     def endTurn(self, game_id):
         """endTurn(game_id) is called by the game each time a hand ends."""
         players_removed = 0
-        
-        if self.remainingInactiveSeconds() < 0: 
+
+        if self.remainingInactiveSeconds() < 0:
             players_removed += self.removeInactivePlayers(game_id)
 
         # if the tourney ended after removing all inactive players, there are no games
         # anymore, so we have to explicitely check this scenario.
         if game_id in self.id2game:
             players_removed += self.removeBrokePlayers(game_id)
-        
+
         return players_removed
 
     def tourneyEnd(self, game_id):
@@ -836,7 +841,7 @@ class PokerTournament:
                 # this happens if game_id was destroyed by the call to balanceGames above
                 self.updateBreak(0)
             return True
-        
+
     def balanceGames(self):
         self.need_balance = False
         if len(self.games) < 2: return
@@ -860,7 +865,7 @@ class PokerTournament:
                 del self.id2game[game.id]
             self.log.inform("balanceGames: broken tables %s", to_break)
             return True
-        
+
         to_equalize = equalizeGames(self.games, self.log)
         for (from_id, to_id, serial) in to_equalize:
             self.log.debug("balanceGames: player %d moved from %d to %d", serial, from_id, to_id)
@@ -873,7 +878,7 @@ class PokerTournament:
         self.need_balance = bool(want_players and not provide_players)
         if self.need_balance:
             self.log.debug("balanceGames: postponed game equalization")
-        
+
         return len(to_equalize) > 0
 
     def prizes(self):
